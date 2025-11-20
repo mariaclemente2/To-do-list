@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do List Colorida</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+  <div class="header">
+    <h1>✔️ To-Do List </h1>
+    <p class="subtitle">Organiza tu día </p>
+  </div>
+
+  <div class="container">
+
+    <!-- Lista General -->
+    <div class="card card-general">
+      <h2>💡 Lista General</h2>
+
+      <form action="/add" method="POST" class="add-form">
+        <input type="hidden" name="list" value="general">
+        <input type="text" name="task" placeholder="Añadir tarea general..." required>
+        <button class="add-btn" type="submit">➕ Añadir</button>
+      </form>
+
+      <ul class="task-list">
+        <% general.forEach((tarea, index) => { %>
+          <li class="task-item fade-in">
+            <span><%= tarea %></span>
+            <form action="/delete" method="POST">
+              <input type="hidden" name="list" value="general">
+              <input type="hidden" name="index" value="<%= index %>">
+              <button class="delete-btn" type="submit">🗑️</button>
+            </form>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <!-- Lista Trabajo -->
+    <div class="card card-work">
+      <h2>💼 Tareas del Trabajo</h2>
+
+      <form action="/add" method="POST" class="add-form">
+        <input type="hidden" name="list" value="work">
+        <input type="text" name="task" placeholder="Añadir tarea del trabajo..." required>
+        <button class="add-btn" type="submit">➕ Añadir</button>
+      </form>
+
+      <ul class="task-list">
+        <% work.forEach((tarea, index) => { %>
+          <li class="task-item fade-in">
+            <span><%= tarea %></span>
+            <form action="/delete" method="POST">
+              <input type="hidden" name="list" value="work">
+              <input type="hidden" name="index" value="<%= index %>">
+              <button class="delete-btn" type="submit">🗑️</button>
+            </form>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+
+  </div>
+
+</body>
+</html>
