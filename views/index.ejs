@@ -9,8 +9,8 @@
 <body>
 
   <div class="header">
-    <h1>✔️ To-Do List </h1>
-    <p class="subtitle">Organiza tu día </p>
+    <h1>✔️ To-Do List</h1>
+    <p class="subtitle">Organiza tu día</p>
   </div>
 
   <div class="container">
@@ -62,6 +62,32 @@
         <% }) %>
       </ul>
     </div>
+
+    <!-- Lista Personalizada -->
+    <% if (customListName) { %>
+      <div class="card card-custom">
+        <h2>📋 Lista: <%= customListName %></h2>
+
+        <form action="/add" method="POST" class="add-form">
+          <input type="hidden" name="list" value="<%= customListName %>">
+          <input type="text" name="task" placeholder="Añadir tarea..." required>
+          <button class="add-btn" type="submit">➕ Añadir</button>
+        </form>
+
+        <ul class="task-list">
+          <% customList.forEach((tarea) => { %>
+            <li class="task-item">
+              <span><%= tarea.name %></span>
+              <form action="/delete" method="POST">
+                <input type="hidden" name="list" value="<%= customListName %>">
+                <input type="hidden" name="itemId" value="<%= tarea._id %>">
+                <button class="delete-btn" type="submit">🗑️</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
 
   </div>
 

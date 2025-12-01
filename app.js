@@ -65,10 +65,44 @@ app.get("/", async (req, res) => {
     res.render("index", {
       general: generalList.items,
       work: workList.items,
+      customList: [],
+      customListName: null,
     });
   } catch (err) {
     console.error(err);
     res.status(500).send("Error al cargar las listas");
+  }
+});
+
+// Rutas dinámicas para listas personalizadas
+app.get("/:customListName", async (req, res) => {
+  const customListName = req.params.customListName.trim();
+
+  // Evitar sobreescribir "general" o "work"
+  if (customListName === "general" || customListName === "work") {
+    return res.redirect("/");
+  }
+
+  try {
+    let foundList = await List.findOne({ name: customListName }).exec();
+
+    if (!foundList) {
+      foundList = new List({
+        name: customListName,
+        items: defaultItems,
+      });
+      await foundList.save();
+    }
+
+    res.render("index", {
+      general: [],
+      work: [],
+      customList: foundList.items,
+      customListName: customListName,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error al cargar la lista personalizada");
   }
 });
 
@@ -90,7 +124,12 @@ app.post("/add", async (req, res) => {
       await new List({ name: list, items: [newItem] }).save();
     }
 
-    res.redirect("/");
+    // Redirigir correctamente según lista
+    if (list !== "general" && list !== "work") {
+      res.redirect("/" + list);
+    } else {
+      res.redirect("/");
+    }
   } catch (err) {
     console.error(err);
     res.status(500).send("Error al añadir tarea");
@@ -110,7 +149,12 @@ app.post("/delete", async (req, res) => {
       { $pull: { items: { _id: itemId } } }
     ).exec();
 
-    res.redirect("/");
+    // Redirigir correctamente según lista
+    if (list !== "general" && list !== "work") {
+      res.redirect("/" + list);
+    } else {
+      res.redirect("/");
+    }
   } catch (err) {
     console.error(err);
     res.status(500).send("Error al eliminar tarea");
@@ -122,3 +166,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
   console.log(`Servidor funcionando en puerto ${PORT}`)
 );
+
