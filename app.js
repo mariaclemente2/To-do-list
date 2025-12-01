@@ -1,56 +1,124 @@
+require("dotenv").config();
+const mongoose = require("mongoose");
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 
+// --- CONEXIÓN A MONGODB ---
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("Conectado a MongoDB Atlas"))
+  .catch((err) => console.log("Error al conectar a MongoDB:", err));
+
+// --- APP EXPRESS ---
 const app = express();
 
-// Usamos Map para guardar dos listas de tareas
-const tasks = new Map([
-  ["general", []],
-  ["work", []]
-]);
+// --- SCHEMAS Y MODELOS ---
+const itemsSchema = new mongoose.Schema({
+  name: String,
+});
 
-// Configuración de EJS
+const Item = mongoose.model("Item", itemsSchema);
+
+const listSchema = new mongoose.Schema({
+  name: String,
+  items: [itemsSchema],
+});
+
+const List = mongoose.model("List", listSchema);
+
+// --- VIEWS Y STATIC ---
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-
-// Middlewares
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// --- ITEMS POR DEFECTO ---
+const defaultItems = [
+  new Item({ name: "Bienvenido a tu lista" }),
+  new Item({ name: "Añade tareas usando el formulario" }),
+  new Item({ name: "Elimina tareas con el icono 🗑️" }),
+];
+
+// Asegura que exista una lista en la BD; si no, la crea
+async function ensureListExists(listName) {
+  let list = await List.findOne({ name: listName }).exec();
+
+  if (!list) {
+    list = new List({
+      name: listName,
+      items: defaultItems,
+    });
+    await list.save();
+  }
+  return list;
+}
+
+// --- RUTAS ---
+
 // Página principal
-app.get("/", (req, res) => {
-  res.render("index", {
-    general: tasks.get("general"),
-    work: tasks.get("work")
-  });
+app.get("/", async (req, res) => {
+  try {
+    const generalList = await ensureListExists("general");
+    const workList = await ensureListExists("work");
+
+    res.render("index", {
+      general: generalList.items,
+      work: workList.items,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error al cargar las listas");
+  }
 });
 
 // Añadir tarea
-app.post("/add", (req, res) => {
+app.post("/add", async (req, res) => {
   const list = req.body.list;
   const task = req.body.task?.trim();
 
-  if (!task || !tasks.has(list)) {
-    return res.redirect("/");
-  }
+  if (!task || !list) return res.redirect("/");
 
-  tasks.get(list).push(task);
-  res.redirect("/");
+  try {
+    const newItem = new Item({ name: task });
+    const foundList = await List.findOne({ name: list }).exec();
+
+    if (foundList) {
+      foundList.items.push(newItem);
+      await foundList.save();
+    } else {
+      await new List({ name: list, items: [newItem] }).save();
+    }
+
+    res.redirect("/");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error al añadir tarea");
+  }
 });
 
 // Eliminar tarea
-app.post("/delete", (req, res) => {
+app.post("/delete", async (req, res) => {
   const list = req.body.list;
-  const index = parseInt(req.body.index, 10);
+  const itemId = req.body.itemId;
 
-  if (tasks.has(list) && !isNaN(index)) {
-    tasks.get(list).splice(index, 1);
+  if (!list || !itemId) return res.redirect("/");
+
+  try {
+    await List.findOneAndUpdate(
+      { name: list },
+      { $pull: { items: { _id: itemId } } }
+    ).exec();
+
+    res.redirect("/");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error al eliminar tarea");
   }
-
-  res.redirect("/");
 });
 
-// Arrancar el servidor
+// --- SERVIDOR ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor funcionando en puerto ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Servidor funcionando en puerto ${PORT}`)
+);

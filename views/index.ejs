@@ -26,12 +26,12 @@
       </form>
 
       <ul class="task-list">
-        <% general.forEach((tarea, index) => { %>
-          <li class="task-item fade-in">
-            <span><%= tarea %></span>
+        <% general.forEach((tarea) => { %>
+          <li class="task-item">
+            <span><%= tarea.name %></span>
             <form action="/delete" method="POST">
               <input type="hidden" name="list" value="general">
-              <input type="hidden" name="index" value="<%= index %>">
+              <input type="hidden" name="itemId" value="<%= tarea._id %>">
               <button class="delete-btn" type="submit">🗑️</button>
             </form>
           </li>
@@ -50,12 +50,12 @@
       </form>
 
       <ul class="task-list">
-        <% work.forEach((tarea, index) => { %>
-          <li class="task-item fade-in">
-            <span><%= tarea %></span>
+        <% work.forEach((tarea) => { %>
+          <li class="task-item">
+            <span><%= tarea.name %></span>
             <form action="/delete" method="POST">
               <input type="hidden" name="list" value="work">
-              <input type="hidden" name="index" value="<%= index %>">
+              <input type="hidden" name="itemId" value="<%= tarea._id %>">
               <button class="delete-btn" type="submit">🗑️</button>
             </form>
           </li>
